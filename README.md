@@ -1,4 +1,4 @@
-# regexapply
+# RegExApply
 Simple JavaScript module for applying regular expressions to text with the following features:
 
 * can extract all matched substrings as an array of strings;
