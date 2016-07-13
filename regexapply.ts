@@ -2,9 +2,10 @@
 
 class RegExApply {
     /////////////////////////////////////////// Private members
-    private _regexpStrings: Array<string>;
+    private _regexpString: string;
+    private _regexpFlags: string;
     private _text: string;
-    private _regexps: Array<any>;
+    private _regexp: any;
     private _matchedStrings: Array<string>;
     private _matchedIndices: Array<number>;
     private _matchDone: boolean;
@@ -12,9 +13,14 @@ class RegExApply {
     public messages: Array<string>;
 
     /////////////////////////////////////////// Getters & Setters
-    get regexpStrings (): Array<string> {return this._regexpStrings;}
-    set regexpStrings (_strings: Array<string>) {
-        this._regexpStrings = _strings;
+    get regexpString (): string {return this._regexpString;}
+    set regexpString (_string: string) {
+        this._regexpString = _string;
+        this._matchDone = false;
+    }
+    get regexpFlags (): string {return this._regexpFlags;}
+    set regexpFlags (_flags: string) {
+        this._regexpFlags = _flags;
         this._matchDone = false;
     }
     get text (): string {return this._text;}
@@ -24,18 +30,18 @@ class RegExApply {
     }
     
     /////////////////////////////////////////// Public methods
-    constructor (_regexps?: Array<string> | string, _text?: string) {
+    constructor (_regexp?: string, _text?: string) {
         if (_text) this.text = _text ? _text : undefined;
-        if (_regexps) {
-            if (typeof _regexps === "string") this._regexpStrings = [_regexps];
-            else this._regexpStrings = _regexps;
-        } else this._regexpStrings = [];
+        if (_regexp) {
+            if (typeof _regexp === "string") this._regexpString = _regexp;
+            else this._regexpString = _regexp;
+        } else this._regexpString = "";
         this._resetOutput();
     };
     /**
      * Extract an array of matched strings
-     * @param  {Array<string>} regexps Regular expressions to be used
-     * @return {Array<string>}         Array of matched strings
+     * @param  {Array<string>} regexp Regular expressions to be used
+     * @return {Array<string>}        Array of matched strings
      */
     matchedStrings (): Array<string> {
         if (!this._matchDone) {
@@ -45,8 +51,8 @@ class RegExApply {
     };
     /**
      * Extract an array of first-last indices of the matched strings
-     * @param  {Array<string>} regexps Regular expressions to be used
-     * @return {Array<string>}         Array of matched strings
+     * @param  {Array<string>} regexp Regular expressions to be used
+     * @return {Array<string>}        Array of matched strings
      */
     matchedIndices (): Array<number> {
         if (!this._matchDone) {
@@ -82,7 +88,7 @@ class RegExApply {
         }
 
         return text;
-    }
+    };
     /**
      * Join matched strings into a new string with a separation string in between
      * @param  {string} jointStr Separation string
@@ -106,46 +112,29 @@ class RegExApply {
      */
     _findMatchedStrings (): void {
         this._resetOutput();
-        // Building the list of regular expressions from string definitions
-        this._regexps = [];
-        for (var i=0, len=this.regexpStrings.length; i<len; ++i) {
-            var reString = this.regexpStrings[i];
-            if (reString) {
-                try {
-                    this._regexps.push( new RegExp(reString, "gm") );
-                } catch (e) {
-                    this.messages.push("Invalid RegExp string: "+reString);
-                    return;
-                }
-            }
+        if (!this._regexpString) return;
+        try {
+            this._regexp = new RegExp(this._regexpString, this._regexpFlags);
+        } catch (e) {
+            this.messages.push("Invalid RegExp string | flags: "+this._regexpString+" | "+this._regexpFlags);
+            return;
         }
-        if (this._regexps.length < 1) return;
-        // Running the first regex on the text
-        var regexps = this._regexps,
+        // Running the regexp on the text
+        var re = this._regexp,
             stringsMatched = [],
             indicesMatched = [],
             stringsRematched = [],
             result_;
-        var regexp_0 = regexps[0];
-        while (result_ = regexp_0.exec(this._text)) {
+        while (result_ = re.exec(this._text)) {
             var len: number = result_[0].length,
-                iLast: number = regexp_0.lastIndex-1;
+                iLast: number = re.lastIndex-1;
             if (len < 1) {
-                regexp_0.lastIndex++;
+                re.lastIndex++;
                 continue;
             }
             stringsMatched.push(result_[0]);
             indicesMatched.push([ iLast - (len-1), iLast ]);
         };
-        // // Matching each matched string against next regexps
-        // for (var iR=1, lenR=regexps.length; iR<lenR; ++iR) {
-        //     var regexp = regexps[iR];
-        //     for (var iS=0, lenS=stringsMatched.length; iS<lenS; ++iS) {
-        //         stringsRematched = stringsRematched.concat( stringsMatched[iS].match(regexp) );
-        //     }
-        //     stringsMatched = stringsRematched.slice();
-        //     stringsRematched = [];
-        // }
 
         this._matchedStrings = stringsMatched;
         this._matchedIndices = indicesMatched;
