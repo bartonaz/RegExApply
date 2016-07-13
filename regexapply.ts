@@ -5,6 +5,7 @@ class RegExApply {
     private _regexpString: string;
     private _regexpFlags: string;
     private _text: string;
+    private _textSearchIndices: Array< Array<number> >;
     private _regexp: any;
     private _matchedStrings: Array<string>;
     private _matchedIndices: Array<number>;
@@ -26,16 +27,23 @@ class RegExApply {
     get text (): string {return this._text;}
     set text (_text: string) {
         this._text = _text;
+        this._resetSearchIndices();
+        this._matchDone = false;
+    }
+    get textSearchIndices (): Array< Array<number> > {return this._textSearchIndices;}
+    set textSearchIndices (_array: Array< Array<number> >) {
+        this._textSearchIndices = _array;
         this._matchDone = false;
     }
     
     /////////////////////////////////////////// Public methods
     constructor (_regexp?: string, _text?: string) {
-        if (_text) this.text = _text ? _text : undefined;
+        if (_text) this._text = _text ? _text : undefined;
         if (_regexp) {
             if (typeof _regexp === "string") this._regexpString = _regexp;
             else this._regexpString = _regexp;
         } else this._regexpString = "";
+        this._resetSearchIndices();
         this._resetOutput();
     };
     /**
@@ -125,16 +133,27 @@ class RegExApply {
             indicesMatched = [],
             stringsRematched = [],
             result_;
-        while (result_ = re.exec(this._text)) {
-            var len: number = result_[0].length,
-                iLast: number = re.lastIndex-1;
-            if (len < 1) {
-                re.lastIndex++;
-                continue;
+        console.log(this._textSearchIndices);
+        // Looping over separate regions of original text
+        for (var iR=0, nR=this._textSearchIndices.length; iR<nR; ++iR) {
+            var indexOffset = this._textSearchIndices[iR][0],
+                lastIndex = this._textSearchIndices[iR][1];
+            if (indexOffset < 0) indexOffset += this._text.length;
+            if (lastIndex >= 0) lastIndex++;
+            var text = this._text.slice(indexOffset, lastIndex);
+            console.log(text);
+            // Incrementally executing the RegExp on the region of text
+            while (result_ = re.exec(text)) {
+                var len: number = result_[0].length,
+                    iLast: number = re.lastIndex-1;
+                if (len < 1) {
+                    re.lastIndex++;
+                    continue;
+                }
+                stringsMatched.push(result_[0]);
+                indicesMatched.push([ indexOffset + iLast - (len-1), indexOffset + iLast ]);
             }
-            stringsMatched.push(result_[0]);
-            indicesMatched.push([ iLast - (len-1), iLast ]);
-        };
+        }
 
         this._matchedStrings = stringsMatched;
         this._matchedIndices = indicesMatched;
@@ -148,5 +167,11 @@ class RegExApply {
         this._matchedIndices = [];
         this._matchDone = false;
         this.messages = [];
+    };
+    /**
+     * Reset text search regions to be a single region containing all text
+     */
+    _resetSearchIndices(): void {
+        if (this._text) this._textSearchIndices = [[0, this._text.length]];
     };
 }
