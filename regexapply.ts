@@ -53,7 +53,7 @@ class RegExApply {
      */
     matchedStrings (): Array<string> {
         if (!this._matchDone) {
-            this._findMatchedStrings();
+            this._findMatchedIndices();
         }
         return this._matchedStrings;
     };
@@ -62,12 +62,22 @@ class RegExApply {
      * @param  {Array<string>} regexp Regular expressions to be used
      * @return {Array<string>}        Array of matched strings
      */
-    matchedIndices (): Array<number> {
+    get matchedIndices (): Array<number> {
         if (!this._matchDone) {
-            this._findMatchedStrings();
+            this._findMatchedIndices();
         }
         return this._matchedIndices.slice();
     };
+    /**
+     * Set array of indices explicitly. No actual regexp needed to extract strings or HTML
+     * @param {Array<Array<number>>} _indices Indices to be used for substring extraction, etc.
+     */
+    set matchedIndices (_indices) {
+        this._resetOutput();
+        this._matchedIndices = _indices;
+        this._findMatchedStrings();
+        this._matchDone = true;
+    }
     /**
      * Text with matched strings surrounded by the configured HTML tags
      * WARNING: it doesn't insert HTML tags for whitespaces. If you're going use it as `innerHTML`, 
@@ -78,10 +88,10 @@ class RegExApply {
         if (before === undefined && after === undefined) return this._text;
         // Performing the matching if not done yet
         if (!this._matchDone) {
-            this._findMatchedStrings();
+            this._findMatchedIndices();
         }
         // Getting the index ranges of substrings to be enclosed in tags
-        var indices = this.matchedIndices(),
+        var indices = this.matchedIndices,
             text = this._text,
             insertOffset = 0,
             tagLength = { before: before.length, after: after.length };
@@ -118,7 +128,7 @@ class RegExApply {
     /**
      * Find all substrings matching the regexps and assign them to the private member
      */
-    _findMatchedStrings (): void {
+    _findMatchedIndices (): void {
         this._resetOutput();
         if (!this._regexpString) return;
         try {
@@ -129,7 +139,6 @@ class RegExApply {
         }
         // Running the regexp on the text
         var re = this._regexp,
-            stringsMatched = [],
             indicesMatched = [],
             stringsRematched = [],
             result_;
@@ -150,15 +159,27 @@ class RegExApply {
                     re.lastIndex++;
                     continue;
                 }
-                stringsMatched.push(result_[0]);
                 indicesMatched.push([ indexOffset + iLast - (len-1), indexOffset + iLast ]);
             }
         }
-
-        this._matchedStrings = stringsMatched;
+        
         this._matchedIndices = indicesMatched;
+        this._findMatchedStrings();
         this._matchDone = true;
     };
+    /**
+     * Extracts substrings based on the found indices
+     */
+    _findMatchedStrings (): void {
+        this._matchedStrings = [];
+        for (var iG=0, nG=this._matchedIndices.length; iG<nG; ++iG) {
+            var first = this._matchedIndices[iG][0],
+                last = this._matchedIndices[iG][1];
+            if (first < 0) first += this._text.length;
+            if (last >=0) last++;
+            this._matchedStrings.push(this._text.slice(first, last));
+        }
+    }
     /**
      * Reset private output members to initial values
      */
