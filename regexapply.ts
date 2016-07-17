@@ -8,7 +8,7 @@ class RegExApply {
     private _textSearchIndices: Array< Array<number> >;
     private _regexp: any;
     private _matchedStrings: Array<string>;
-    private _matchedIndices: Array<number>;
+    private _matchedIndices: Array<Array<number>>;
     private _matchDone: boolean;
     /////////////////////////////////////////// Public members
     public messages: Array<string>;
@@ -32,17 +32,16 @@ class RegExApply {
     }
     get textSearchIndices (): Array< Array<number> > {return this._textSearchIndices;}
     set textSearchIndices (_array: Array< Array<number> >) {
-        this._textSearchIndices = _array;
+        if (_array === undefined) this._resetSearchIndices();
+        else this._textSearchIndices = _array;
         this._matchDone = false;
     }
     
     /////////////////////////////////////////// Public methods
-    constructor (_regexp?: string, _text?: string) {
-        if (_text) this._text = _text ? _text : undefined;
-        if (_regexp) {
-            if (typeof _regexp === "string") this._regexpString = _regexp;
-            else this._regexpString = _regexp;
-        } else this._regexpString = "";
+    constructor (_regexp?: string, _flags?:string, _text?: string) {
+        this._text = _text ? _text : undefined;
+        this._regexpString = _regexp ? _regexp : "";
+        this._regexpFlags = _flags ? _flags : "";
         this._resetSearchIndices();
         this._resetOutput();
     };
@@ -51,7 +50,7 @@ class RegExApply {
      * @param  {Array<string>} regexp Regular expressions to be used
      * @return {Array<string>}        Array of matched strings
      */
-    matchedStrings (): Array<string> {
+    get matchedStrings (): Array<string> {
         if (!this._matchDone) {
             this._findMatchedIndices();
         }
@@ -62,7 +61,7 @@ class RegExApply {
      * @param  {Array<string>} regexp Regular expressions to be used
      * @return {Array<string>}        Array of matched strings
      */
-    get matchedIndices (): Array<number> {
+    get matchedIndices (): Array<Array<number>> {
         if (!this._matchDone) {
             this._findMatchedIndices();
         }
@@ -140,9 +139,7 @@ class RegExApply {
         // Running the regexp on the text
         var re = this._regexp,
             indicesMatched = [],
-            stringsRematched = [],
             result_;
-        console.log(this._textSearchIndices);
         // Looping over separate regions of original text
         for (var iR=0, nR=this._textSearchIndices.length; iR<nR; ++iR) {
             var indexOffset = this._textSearchIndices[iR][0],
@@ -150,11 +147,11 @@ class RegExApply {
             if (indexOffset < 0) indexOffset += this._text.length;
             if (lastIndex >= 0) lastIndex++;
             var text = this._text.slice(indexOffset, lastIndex);
-            console.log(text);
             // Incrementally executing the RegExp on the region of text
             while (result_ = re.exec(text)) {
                 var len: number = result_[0].length,
                     iLast: number = re.lastIndex-1;
+                if (iLast < 0) break;
                 if (len < 1) {
                     re.lastIndex++;
                     continue;
