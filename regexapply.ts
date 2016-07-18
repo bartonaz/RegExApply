@@ -84,27 +84,7 @@ class RegExApply {
      * @return {string} [description]
      */
     textForHTML (before?: string, after?: string): string {
-        if (before === undefined && after === undefined) return this._text;
-        // Performing the matching if not done yet
-        if (!this._matchDone) {
-            this._findMatchedIndices();
-        }
-        // Getting the index ranges of substrings to be enclosed in tags
-        var indices = this.matchedIndices,
-            text = this._text,
-            insertOffset = 0,
-            tagLength = { before: before.length, after: after.length };
-        // Inserting the <before> and <after> tags into the string
-        for (var iM=0,nM=indices.length; iM<nM; ++iM) {
-            // console.log(""+iM+": "+text);
-            var index = indices[iM];
-            text = [text.slice(0, index[0]+insertOffset), before, text.slice(index[0]+insertOffset)].join('');
-            insertOffset += tagLength.before;
-            text = [text.slice(0, index[1]+1+insertOffset), after, text.slice(index[1]+1+insertOffset)].join('');
-            insertOffset += tagLength.after;
-        }
-
-        return text;
+        return this.highlightedHTMLString(this._text, this.matchedIndices, before, after);
     };
     /**
      * Join matched strings into a new string with a separation string in between
@@ -192,4 +172,31 @@ class RegExApply {
     _resetSearchIndices(): void {
         if (this._text) this._textSearchIndices = [[0, this._text.length]];
     };
+
+    /////////////////////////////////////////// Class methods
+    /**
+     * Inserts specified strings before and after text fragments to highlight them
+     * @param  {string}               _text    Input text
+     * @param  {Array<Array<number>>} _indices Array of pairs of indices of the first and last characters of the fragments
+     * @param  {string}               _before  String to be inserted before each fragment
+     * @param  {string}               _after   String to be inserted after each fragment
+     * @return {string}                        HTML string represting the highlighted text
+     */
+    highlightedHTMLString (_text: string, _indices: Array<Array<number>>, _before?: string, _after?: string): string {
+        if (_before === undefined && _after === undefined) return _text;
+        // Setting the initial indices of points where tags should be inserted
+        var insertOffset = 0,
+            tagLength = { before: _before.length, after: _after.length },
+            text = _text.slice();
+        // Inserting the <before> and <after> tags into the string
+        for (var iM=0,nM=_indices.length; iM<nM; ++iM) {
+            var index = _indices[iM];
+            text = [text.slice(0, index[0]+insertOffset), _before, text.slice(index[0]+insertOffset)].join('');
+            insertOffset += tagLength.before;
+            text = [text.slice(0, index[1]+1+insertOffset), _after, text.slice(index[1]+1+insertOffset)].join('');
+            insertOffset += tagLength.after;
+        }
+
+        return text;
+    }
 }
