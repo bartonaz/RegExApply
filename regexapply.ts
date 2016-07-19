@@ -84,7 +84,7 @@ class RegExApply {
      * @return {string} [description]
      */
     textForHTML (before?: string, after?: string): string {
-        return this.highlightedHTMLString(this._text, this.matchedIndices, before, after);
+        return RegExApply.highlightedHTMLString(this._text, this.matchedIndices, before, after);
     };
     /**
      * Join matched strings into a new string with a separation string in between
@@ -173,7 +173,7 @@ class RegExApply {
         if (this._text) this._textSearchIndices = [[0, this._text.length]];
     };
 
-    /////////////////////////////////////////// Class methods
+    /////////////////////////////////////////// Static class methods
     /**
      * Inserts specified strings before and after text fragments to highlight them
      * @param  {string}               _text    Input text
@@ -182,7 +182,7 @@ class RegExApply {
      * @param  {string}               _after   String to be inserted after each fragment
      * @return {string}                        HTML string represting the highlighted text
      */
-    highlightedHTMLString (_text: string, _indices: Array<Array<number>>, _before?: string, _after?: string): string {
+    static highlightedHTMLString (_text: string, _indices: Array<Array<number>>, _before?: string, _after?: string): string {
         if (_before === undefined && _after === undefined) return _text;
         // Setting the initial indices of points where tags should be inserted
         var insertOffset = 0,
