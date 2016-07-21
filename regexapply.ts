@@ -195,10 +195,14 @@ class RegExApply {
     };
     /**
      * Join matched strings into a new string with a separation string in between
-     * @param  {string} separator Separation string
-     * @return {string}           Joined string
+     * @param  {Array<string>} _strings   Strings to match
+     * @param  {string}        _separator Separator inserted between strings
+     * @param  {string}        _prefix    Inserted before each string
+     * @param  {string}        _postfix   Inserted after each string
+     * @return {string}                   Complete joined string
      */
     static matchedStringsJoined (_strings: Array<string>, _separator?: string, _prefix?: string, _postfix?: string): string {
+        if (_strings.length < 1) return "";
         var postfix = _postfix === undefined ? "" : _postfix,
             prefix = _prefix === undefined ? "" : _prefix,
             separator = _separator === undefined ? "" : _separator,
