@@ -4,6 +4,7 @@ class RegExApply {
     /////////////////////////////////////////// Private members
     private _regexpString: string;
     private _regexpFlags: string;
+    private _regexpIsGlobal: boolean;
     private _text: string;
     private _textSearchIndices: Array< Array<number> >;
     private _regexp: any;
@@ -22,6 +23,7 @@ class RegExApply {
     get regexpFlags (): string {return this._regexpFlags;}
     set regexpFlags (_flags: string) {
         this._regexpFlags = _flags;
+        this._regexpIsGlobal = _flags.indexOf("g") !== -1;
         this._matchDone = false;
     }
     get text (): string {return this._text;}
@@ -130,13 +132,13 @@ class RegExApply {
             // Incrementally executing the RegExp on the region of text
             while (result_ = re.exec(text)) {
                 var len: number = result_[0].length,
-                    iLast: number = re.lastIndex-1;
-                if (iLast < 0) break;
-                if (len < 1) {
+                    iFirst: number = result_.index;
+                if (this._regexpIsGlobal && len < 1) {
                     re.lastIndex++;
                     continue;
                 }
-                indicesMatched.push([ indexOffset + iLast - (len-1), indexOffset + iLast ]);
+                indicesMatched.push([ indexOffset + iFirst, indexOffset + iFirst + len-1 ]);
+                if (!this._regexpIsGlobal) break;
             }
         }
         
