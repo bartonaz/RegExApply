@@ -89,14 +89,6 @@ class RegExApply {
         return RegExApply.highlightedHTMLString(this._text, this.matchedIndices, before, after);
     };
     /**
-     * Join matched strings into a new string with a separation string in between
-     * @param  {string} jointStr Separation string
-     * @return {string}          Joined string
-     */
-    matchedStringsJoined (jointStr: string): string {
-        return "matchedJoined"
-    };
-    /**
      * Replace matched strings with a new string in the text
      * @param  {string} replaceStr Replacement string
      * @return {string}            Original text with matched strings being replaced
@@ -200,5 +192,19 @@ class RegExApply {
         }
 
         return text;
-    }
+    };
+    /**
+     * Join matched strings into a new string with a separation string in between
+     * @param  {string} separator Separation string
+     * @return {string}           Joined string
+     */
+    static matchedStringsJoined (_strings: Array<string>, _separator?: string, _prefix?: string, _postfix?: string): string {
+        var postfix = _postfix === undefined ? "" : _postfix,
+            prefix = _prefix === undefined ? "" : _prefix,
+            separator = _separator === undefined ? "" : _separator,
+            joinStr = postfix+separator+prefix;
+            var joinedStr = _strings.join(joinStr);
+
+            return prefix+joinedStr+postfix;
+    };
 }
