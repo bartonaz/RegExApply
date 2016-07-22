@@ -180,16 +180,22 @@ class RegExApply {
         if (_before === undefined && _after === undefined) return _text;
         // Setting the initial indices of points where tags should be inserted
         var insertOffset = 0,
-            tagLength = { before: _before.length, after: _after.length },
+            tagDressing = "@##BRT5K.H1GHLiGHT##@",
+            before = _before.replace(/</g, tagDressing+"<").replace(/>/g, ">"+tagDressing),
+            after = _after.replace(/</g, tagDressing+"<").replace(/>/g, ">"+tagDressing),
+            tagLength = { before: before.length, after: after.length },
             text = _text.slice();
         // Inserting the <before> and <after> tags into the string
         for (var iM=0,nM=_indices.length; iM<nM; ++iM) {
             var index = _indices[iM];
-            text = [text.slice(0, index[0]+insertOffset), _before, text.slice(index[0]+insertOffset)].join('');
+            text = [text.slice(0, index[0]+insertOffset), before, text.slice(index[0]+insertOffset)].join('');
             insertOffset += tagLength.before;
-            text = [text.slice(0, index[1]+1+insertOffset), _after, text.slice(index[1]+1+insertOffset)].join('');
+            text = [text.slice(0, index[1]+1+insertOffset), after, text.slice(index[1]+1+insertOffset)].join('');
             insertOffset += tagLength.after;
         }
+        // Escaping HTML characters
+        text = RegExApply.escapedString(text);
+        text = RegExApply.unescapedString(text, tagDressing);
 
         return text;
     };
@@ -208,7 +214,29 @@ class RegExApply {
             separator = _separator === undefined ? "" : _separator,
             joinStr = postfix+separator+prefix;
             var joinedStr = _strings.join(joinStr);
+            joinedStr = prefix+joinedStr+postfix;
 
-            return prefix+joinedStr+postfix;
+            return RegExApply.escapedString(joinedStr);
+    };
+    /**
+     * String with < and > symbols escaped
+     * @param {string} _string Input string
+     */
+    static escapedString (_string: string) {
+        var str = _string.replace(/</g, "&lt;");
+        str = str.replace(/>/g, "&gt;");
+        
+        return str;
+    };
+    /**
+     * String with dressed &lt; and &gt; symbols unescaped
+     * @param {string} _string   Input string
+     * @param {string} _dressing String appearing before escaped < and after escaped >
+     */
+    static unescapedString (_string: string, _dressing: string) {
+        var rePre = new RegExp(_dressing+"&lt;", "g"),
+            rePost = new RegExp("&gt;"+_dressing, "g");
+        
+        return _string.replace(rePre, "<").replace(rePost, ">");
     };
 }
