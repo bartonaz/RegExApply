@@ -11,6 +11,7 @@ class RegExApply {
     private _matchedStrings: Array<string>;
     private _matchedIndices: Array<Array<number>>;
     private _matchDone: boolean;
+    private static _tagDressing: string = "@##BRT5K.H1GHLiGHT##@";
     /////////////////////////////////////////// Public members
     public messages: Array<string>;
 
@@ -180,9 +181,8 @@ class RegExApply {
         if (_before === undefined && _after === undefined) return _text;
         // Setting the initial indices of points where tags should be inserted
         var insertOffset = 0,
-            tagDressing = "@##BRT5K.H1GHLiGHT##@",
-            before = _before.replace(/</g, tagDressing+"<").replace(/>/g, ">"+tagDressing),
-            after = _after.replace(/</g, tagDressing+"<").replace(/>/g, ">"+tagDressing),
+            before = _before.replace(/</g, this._tagDressing+"<").replace(/>/g, ">"+this._tagDressing),
+            after = _after.replace(/</g, this._tagDressing+"<").replace(/>/g, ">"+this._tagDressing),
             tagLength = { before: before.length, after: after.length },
             text = _text.slice();
         // Inserting the <before> and <after> tags into the string
@@ -194,8 +194,8 @@ class RegExApply {
             insertOffset += tagLength.after;
         }
         // Escaping HTML characters
-        text = RegExApply.escapedString(text);
-        text = RegExApply.unescapedString(text, tagDressing);
+        text = this.escapedString(text);
+        text = this.unescapedString(text, this._tagDressing);
 
         return text;
     };
@@ -209,20 +209,20 @@ class RegExApply {
      */
     static matchedStringsJoined (_strings: Array<string>, _separator?: string, _prefix?: string, _postfix?: string): string {
         if (_strings.length < 1) return "";
-        var postfix = _postfix === undefined ? "" : _postfix,
-            prefix = _prefix === undefined ? "" : _prefix,
-            separator = _separator === undefined ? "" : _separator,
+        var postfix = _postfix === undefined ? "" : this.replacedSpecialChars(_postfix),
+            prefix = _prefix === undefined ? "" : this.replacedSpecialChars(_prefix),
+            separator = _separator === undefined ? "" : this.replacedSpecialChars(_separator),
             joinStr = postfix+separator+prefix;
             var joinedStr = _strings.join(joinStr);
             joinedStr = prefix+joinedStr+postfix;
 
-            return RegExApply.escapedString(joinedStr);
+            return this.escapedString(joinedStr);
     };
     /**
      * String with < and > symbols escaped
      * @param {string} _string Input string
      */
-    static escapedString (_string: string) {
+    static escapedString (_string: string): string {
         var str = _string.replace(/</g, "&lt;");
         str = str.replace(/>/g, "&gt;");
         
@@ -233,10 +233,22 @@ class RegExApply {
      * @param {string} _string   Input string
      * @param {string} _dressing String appearing before escaped < and after escaped >
      */
-    static unescapedString (_string: string, _dressing: string) {
+    static unescapedString (_string: string, _dressing: string): string {
         var rePre = new RegExp(_dressing+"&lt;", "g"),
             rePost = new RegExp("&gt;"+_dressing, "g");
         
         return _string.replace(rePre, "<").replace(rePost, ">");
+    };
+    /**
+     * Replaces special and escaped characters by normal symbols
+     * @param  {string} _string Input string
+     */
+    static replacedSpecialChars (_string: string): string {
+        var str = _string.replace(/\\\\/g, this._tagDressing+"\\"+this._tagDressing);
+        str = str.replace(/\\n/g, "\n");
+        str = str.replace(/\\t/g, "\t");
+        str = str.replace(RegExp(this._tagDressing, "g"), "");
+        
+        return str;
     };
 }
