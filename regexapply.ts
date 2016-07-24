@@ -251,4 +251,10 @@ class RegExApply {
         
         return str;
     };
+    static unreplacedSpecialChars (_string: string): string {
+        var str = _string.replace(/\n/g, "\\n");
+        str = str.replace(/\t/g, "\\t");
+        
+        return str;
+    };
 }
