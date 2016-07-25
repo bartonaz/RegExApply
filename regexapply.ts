@@ -107,7 +107,7 @@ class RegExApply {
             var replacement = _replaceStr;
             // Treating special symbols in the replacement string
             text += replacement;
-            lastCharIndex = indices[1];
+            lastCharIndex = indices[1]+1;
         }
         text += this._text.slice(lastCharIndex);
 
