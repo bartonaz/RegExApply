@@ -86,16 +86,32 @@ class RegExApply {
      * make sure that the element has the following CSS rule: `white-space: pre-wrap;`
      * @return {string} [description]
      */
-    textForHTML (before?: string, after?: string): string {
-        return RegExApply.highlightedHTMLString(this._text, this.matchedIndices, before, after);
+    textForHTML (_before?: string, _after?: string): string {
+        return RegExApply.highlightedHTMLString(this._text, this.matchedIndices, _before, _after);
     };
     /**
      * Replace matched strings with a new string in the text
-     * @param  {string} replaceStr Replacement string
-     * @return {string}            Original text with matched strings being replaced
+     * @param  {string} _replaceStr Replacement string
+     * @return {string}             Original text with matched strings being replaced
      */
-    textReplaced (replaceStr: string, tagStr_before: string, tagStr_after: string): string {
-        return "replaced";
+    textReplaced (_replaceStr: string): string {
+        var text = "",
+            matchedStrings = this.matchedStrings,
+            lastCharIndex = 0;
+        // Looping through the matched fragments
+        for (var iF=0, nF=this._matchedIndices.length; iF<nF; ++iF) {
+            var indices = this._matchedIndices[iF];
+            // Adding the original part of the text before the match
+            text += this._text.slice(lastCharIndex, indices[0]);
+            // Adding the replacement string
+            var replacement = _replaceStr;
+            // Treating special symbols in the replacement string
+            text += replacement;
+            lastCharIndex = indices[1];
+        }
+        text += this._text.slice(lastCharIndex);
+
+        return text;
     };
 
     /////////////////////////////////////////// Private methods
@@ -216,7 +232,7 @@ class RegExApply {
             var joinedStr = _strings.join(joinStr);
             joinedStr = prefix+joinedStr+postfix;
 
-            return this.escapedString(joinedStr);
+            return joinedStr;
     };
     /**
      * String with < and > symbols escaped
