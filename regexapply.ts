@@ -181,7 +181,7 @@ class RegExApply {
      * Reset text search regions to be a single region containing all text
      */
     _resetSearchIndices(): void {
-        if (this._text) this._textSearchIndices = [[0, this._text.length]];
+        if (this._text !== undefined) this._textSearchIndices = [[0, this._text.length]];
     };
 
     /////////////////////////////////////////// Static class methods
