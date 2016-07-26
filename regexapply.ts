@@ -254,7 +254,6 @@ class RegExApply {
             rePost = new RegExp(dressing[0]+"&gt;"+dressing[1], "g");
         
         var str = _string.replace(rePre, "<").replace(rePost, ">");
-        // if (dressing === "") str = str.replace(/&amp;/g, "&");
 
         return str;
     };
@@ -270,6 +269,11 @@ class RegExApply {
         
         return str;
     };
+    /**
+     * Recovering the replaced special characters
+     * @param  {string} _string Input string
+     * @return {string}         Recovered string
+     */
     static unreplacedSpecialChars (_string: string): string {
         var str = _string.replace(/\n/g, "\\n");
         str = str.replace(/\t/g, "\\t");
