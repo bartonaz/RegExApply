@@ -1,6 +1,10 @@
 {
     "compilerOptions": {
         "sourceMap":  true,
-        "target": "ES5"
-    }
+        "target": "ES5",
+        "outFile": "regexapply.js"
+    },
+    "files": [
+        "regexapply.ts"
+    ]
 }
