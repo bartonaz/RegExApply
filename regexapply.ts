@@ -96,16 +96,14 @@ class RegExApply {
      */
     textReplaced (_replaceStr: string): string {
         var text = "",
-            matchedStrings = this.matchedStrings,
             lastCharIndex = 0;
         // Looping through the matched fragments
         for (var iF=0, nF=this._matchedIndices.length; iF<nF; ++iF) {
             var indices = this._matchedIndices[iF];
             // Adding the original part of the text before the match
             text += this._text.slice(lastCharIndex, indices[0]);
-            // Adding the replacement string
-            var replacement = _replaceStr;
-            // Treating special symbols in the replacement string
+            // Adding the replacement string, treating special acnhor symbols
+            var replacement = RegExApply.anchoredStringExpanded(_replaceStr, this.matchedStrings, iF);
             text += replacement;
             lastCharIndex = indices[1]+1;
         }
@@ -235,6 +233,62 @@ class RegExApply {
             return joinedStr;
     };
     /**
+     * Expands the string with anchors into a literal string
+     * @param  {string}        _anchorString   String with anchor symbols to be expanded
+     * @param  {Array<string>} _matchedStrings Strings matched by a regexp that are referenced by anchors
+     * @return {string}                        Expanded literal string
+     */
+    static anchoredStringExpanded(_anchorString: string, _matchedStrings: Array<string>, _index: number): string {
+        var str = "",
+            anchorString = RegExApply.dressUnescapeSlash(_anchorString),
+            _indexLast = _matchedStrings.length-1,
+            // anchorString = _anchorString,
+            result_ = undefined,
+            lastIndex = 0,
+            re = /\\[-]?(#[+-]\d|[+-]?\d+|[IN][+-]\d+|[IN#& ])/g;
+        // Looping through the elements of the anchor string
+        while (result_ = re.exec(anchorString)) {
+            var len: number = result_[0].length,
+                iFirst: number = result_.index,
+                nEl = _matchedStrings.length;
+            // Adding the raw unmatched text fragment
+            str += anchorString.slice(lastIndex, iFirst);
+            // Interpreting the matched fragment
+            var partRaw = anchorString.slice(iFirst+1, iFirst + len),
+                partRes = undefined,
+                part = "";
+            
+            // If the matched fragment is an index
+            if (partRes = partRaw.match(/([-])?I([+-])?(\d+)?/)) {
+                console.log("Index result:");
+                console.log(partRes);
+                var inverted = partRes[1] !== undefined,
+                    id = inverted ? _indexLast - _index +1 : _index +1,
+                    shiftSign = partRes[2],
+                    shiftLength = partRes[3];
+                if (shiftSign !== undefined && shiftLength !== undefined) {
+                    shiftLength = parseInt(shiftLength);
+                    if (shiftSign == "+") id += shiftLength;
+                    else if (shiftSign == "-") id -= shiftLength;
+                }
+                part += id;
+            }
+
+            // var part = partRaw;
+            // str += partRaw;
+            str += part;
+            console.log("anchoredStringExpanded: "+iFirst);
+            console.log(result_);
+            console.log(partRaw);
+            lastIndex = iFirst+len;
+            if (len < 1) break;
+        }
+        console.log("Str: "+str);
+        if (str.length === 0) str = anchorString;
+
+        return RegExApply.removedDressing(str);
+    }
+    /**
      * String with < and > symbols escaped
      * @param {string} _string Input string
      */
@@ -262,12 +316,26 @@ class RegExApply {
      * @param  {string} _string Input string
      */
     static replacedSpecialChars (_string: string): string {
-        var str = _string.replace(/\\\\/g, this._tagDressing[0]+"\\"+this._tagDressing[1]);
+        var str = RegExApply.dressUnescapeSlash(_string);
         str = str.replace(/\\n/g, "\n");
         str = str.replace(/\\t/g, "\t");
         str = str.replace(RegExp(this._tagDressing[0], "g"), "").replace(RegExp(this._tagDressing[1], "g"), "");
         
-        return str;
+        return RegExApply.removedDressing(str);
+    };
+    /**
+     * Unescape double slashes and enclose in dressing
+     * @param  {string} _string Input string with escaped slashes
+     */
+    static dressUnescapeSlash (_string: string): string {
+        return _string.replace(/\\\\/g, this._tagDressing[0]+"\\"+this._tagDressing[1]);
+    };
+    /**
+     * Remove dressing strings
+     * @param  {string} _string Input string with dressed fragments
+     */
+    static removedDressing (_string: string): string {
+        return _string.replace(RegExp(this._tagDressing[0], "g"), "").replace(RegExp(this._tagDressing[1], "g"), "");
     };
     /**
      * Recovering the replaced special characters
