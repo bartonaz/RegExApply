@@ -245,7 +245,7 @@ class RegExApply {
             // anchorString = _anchorString,
             result_ = undefined,
             lastIndex = 0,
-            re = /\\[-]?(#[+-]\d|[+-]?\d+|[IN][+-]\d+|[IN#& ])/g;
+            re = /\\[-]?(#\d*|\d+|[I&][+-]\d+|[I&])/g;
         // Looping through the elements of the anchor string
         while (result_ = re.exec(anchorString)) {
             var len: number = result_[0].length,
@@ -260,18 +260,14 @@ class RegExApply {
             
             // If the matched fragment is an index
             if (partRes = partRaw.match(/([-])?I([+-])?(\d+)?/)) {
-                console.log("Index result:");
-                console.log(partRes);
-                var inverted = partRes[1] !== undefined,
-                    id = inverted ? _indexLast - _index +1 : _index +1,
-                    shiftSign = partRes[2],
-                    shiftLength = partRes[3];
-                if (shiftSign !== undefined && shiftLength !== undefined) {
-                    shiftLength = parseInt(shiftLength);
-                    if (shiftSign == "+") id += shiftLength;
-                    else if (shiftSign == "-") id -= shiftLength;
-                }
+                var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, false);
+                // Correcting for numbers starting from 1 (not 0)
+                id += 1;
                 part += id;
+            }
+            else if (partRes = partRaw.match(/([-])?&([+-])?(\d+)?/)) {
+                var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
+                part += _matchedStrings[id];
             }
 
             // var part = partRaw;
@@ -287,6 +283,32 @@ class RegExApply {
         if (str.length === 0) str = anchorString;
 
         return RegExApply.removedDressing(str);
+    };
+    /**
+     * Parses an array of matched groups to build the id referenced by the matched string
+     * @param  {Array<any>} _result     Result of the regex match
+     * @param  {number}     _index      Initial index of the element
+     * @param  {number}     _indexLast  Index of the last element in the array of elements
+     * @param  {number}     _stayInside Whether the index should loop only through available indices
+     */
+    static anchoredIdFromResult (_result: Array<any>, _index: number, _indexLast: number, _stayInside: boolean): number {
+        var inverted = _result[1] !== undefined,
+            id = inverted ? _indexLast - _index : _index,
+            shiftSign = _result[2],
+            shiftLength = _result[3];
+        if (shiftSign !== undefined && shiftLength !== undefined) {
+            shiftLength = parseInt(shiftLength);
+            if (shiftSign == "+") {
+                id += shiftLength;
+                if (id > _indexLast && _stayInside) id %= _indexLast + 1;
+            }
+            else if (shiftSign == "-") {
+                id -= shiftLength;
+                if (id < 0 && _stayInside) id = _indexLast - Math.abs(id)%(_indexLast+1) + 1;
+            }
+        }
+
+        return id;
     }
     /**
      * String with < and > symbols escaped
