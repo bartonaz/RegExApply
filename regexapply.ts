@@ -245,13 +245,13 @@ class RegExApply {
             // anchorString = _anchorString,
             result_ = undefined,
             lastIndex = 0,
-            re = /\\[-]?(#\d*|\d+|[I&][+-]\d+|[I&])/g;
+            re = /\\[-]?(#\d*|\d+|[I&N][+-]\d+|[I&N]) ?/g;
         // Looping through the elements of the anchor string
         while (result_ = re.exec(anchorString)) {
             var len: number = result_[0].length,
                 iFirst: number = result_.index,
                 nEl = _matchedStrings.length;
-            // Adding the raw unmatched text fragment
+            // Adding the preceding raw unmatched text fragment
             str += anchorString.slice(lastIndex, iFirst);
             // Interpreting the matched fragment
             var partRaw = anchorString.slice(iFirst+1, iFirst + len),
@@ -265,10 +265,17 @@ class RegExApply {
                 id += 1;
                 part += id;
             }
+            // If the matched fragment is an element with index offset
             else if (partRes = partRaw.match(/([-])?&([+-])?(\d+)?/)) {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
                 part += _matchedStrings[id];
             }
+            // If the matched fragment is an element with index offset
+            else if (partRes = partRaw.match(/([-])?N([+-])?(\d+)?/)) {
+                var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
+                part += _matchedStrings[id];
+            }
+            // If the matched fragment is an element at a fixed index
             else if (partRes = partRaw.match(/([-])?#(\d+)/)) {
                 var id = partRes[2] -1;
                 if (partRes[1] !== undefined) id = _indexLast - id;
@@ -284,6 +291,8 @@ class RegExApply {
             lastIndex = iFirst+len;
             if (len < 1) break;
         }
+        // Adding the remaining unmatched part of anchor string
+        str += anchorString.slice(lastIndex);
         console.log("Str: "+str);
         if (str.length === 0) str = anchorString;
 
