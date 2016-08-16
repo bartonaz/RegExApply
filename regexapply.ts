@@ -269,6 +269,11 @@ class RegExApply {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
                 part += _matchedStrings[id];
             }
+            else if (partRes = partRaw.match(/([-])?#(\d+)/)) {
+                var id = partRes[2] -1;
+                if (partRes[1] !== undefined) id = _indexLast - id;
+                part += _matchedStrings[id];
+            }
 
             // var part = partRaw;
             // str += partRaw;
