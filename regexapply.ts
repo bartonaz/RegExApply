@@ -221,16 +221,24 @@ class RegExApply {
      * @param  {string}        _postfix   Inserted after each string
      * @return {string}                   Complete joined string
      */
-    static matchedStringsJoined (_strings: Array<string>, _separator?: string, _prefix?: string, _postfix?: string): string {
+    static matchedStringsJoined (_strings: Array<string>, _fragment: string, _separator?: string): string {
         if (_strings.length < 1) return "";
-        var postfix = _postfix === undefined ? "" : this.replacedSpecialChars(_postfix),
-            prefix = _prefix === undefined ? "" : this.replacedSpecialChars(_prefix),
+        var fragment = _fragment === undefined ? "" : this.replacedSpecialChars(_fragment),
             separator = _separator === undefined ? "" : this.replacedSpecialChars(_separator),
-            joinStr = postfix+separator+prefix;
-            var joinedStr = _strings.join(joinStr);
-            joinedStr = prefix+joinedStr+postfix;
+            string_joined = "";
+        // Looping over matched strings and expanding fragments joined with separators
+        for (var iF=0, nF=_strings.length; iF<nF; ++iF) {
+            var fragment_expanded = RegExApply.anchoredStringExpanded(fragment, _strings, iF),
+                separator_expanded = RegExApply.anchoredStringExpanded(separator, _strings, iF);
+            string_joined += fragment_expanded;
+            if (iF == nF-1) continue;
+            string_joined += separator_expanded;
+        }
+            // joinStr = postfix+separator+prefix;
+            // var joinedStr = _strings.join(joinStr);
+            // joinedStr = prefix+joinedStr+postfix;
 
-            return joinedStr;
+        return string_joined;
     };
     /**
      * Expands the string with anchors into a literal string
@@ -270,10 +278,10 @@ class RegExApply {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
                 part += _matchedStrings[id];
             }
-            // If the matched fragment is an element with index offset
+            // If the matched fragment is an element with number of matches
             else if (partRes = partRaw.match(/([-])?N([+-])?(\d+)?/)) {
-                var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
-                part += _matchedStrings[id];
+                var id = RegExApply.anchoredIdFromResult(partRes, _matchedStrings.length, 0, false);
+                part += id;
             }
             // If the matched fragment is an element at a fixed index
             else if (partRes = partRaw.match(/([-])?#(\d+)/)) {
