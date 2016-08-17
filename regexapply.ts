@@ -109,7 +109,6 @@ class RegExApply {
      * @return {string}             Original text with matched strings being replaced
      */
     textReplaced (_replaceStr: string): string {
-        console.log("textReplaced: "+_replaceStr);
         var text = "",
             lastCharIndex = 0;
         // Looping through the matched fragments
@@ -171,8 +170,6 @@ class RegExApply {
                     }
                     stringsGroupMatched.push(groupStrings);
                 }
-                console.log("Group str:");
-                console.log(stringsGroupMatched);
                 if (!this._regexpIsGlobal) break;
             }
         }
@@ -181,8 +178,6 @@ class RegExApply {
         this._matchedStrings = stringsMatched;
         this._matchedGroupStrings = stringsGroupMatched;
         this._matchDone = true;
-        console.log("Group strings");
-        console.log(this._matchedGroupStrings[0]);
     };
     /**
      * Extracts substrings based on the found indices
@@ -295,7 +290,6 @@ class RegExApply {
             var partRaw = anchorString.slice(iFirst+1, iFirst + len),
                 partRes = undefined,
                 part = "";
-            console.log("partRaw: "+partRaw);
             // If the matched fragment is an index
             if (partRes = partRaw.match(/([-])?I([+-])?(\d+)?/)) {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, false);
@@ -323,8 +317,6 @@ class RegExApply {
             else if (partRes = partRaw.match(/([-])?(\d+)/)) {
                 var id = partRes[2] -1;
                 if (partRes[1] !== undefined) id = this._matchedGroupStrings.length - 1 - id;
-                console.log("Grouped strings:");
-                console.log(this._matchedGroupStrings);
                 if (this._matchedGroupStrings.length > 0) {
                     part += this._matchedGroupStrings[_index][id];
                 }
@@ -333,15 +325,11 @@ class RegExApply {
             // var part = partRaw;
             // str += partRaw;
             str += part;
-            console.log("anchoredStringExpanded: "+iFirst);
-            console.log(result_);
-            console.log(partRaw);
             lastIndex = iFirst+len;
             if (len < 1) break;
         }
         // Adding the remaining unmatched part of anchor string
         str += anchorString.slice(lastIndex);
-        console.log("Str: "+str);
         if (str.length === 0) str = anchorString;
 
         return RegExApply.removedDressing(str);
