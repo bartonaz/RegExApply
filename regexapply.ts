@@ -59,6 +59,12 @@ class RegExApply {
         return this._matchedStrings;
     };
     /**
+     * Set an array of matched strings
+     */
+    set matchedStrings (_strings: Array<string>) {
+        this._matchedStrings = _strings;
+    };
+    /**
      * Extract an array of arrays of strings matched to groups
      */
     get matchedGroupStrings (): Array<Array<string>> {
