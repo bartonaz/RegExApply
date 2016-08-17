@@ -182,7 +182,7 @@ class RegExApply {
         this._matchedGroupStrings = stringsGroupMatched;
         this._matchDone = true;
         console.log("Group strings");
-        console.log(this._matchedGroupStrings);
+        console.log(this._matchedGroupStrings[0]);
     };
     /**
      * Extracts substrings based on the found indices
@@ -326,7 +326,7 @@ class RegExApply {
                 console.log("Grouped strings:");
                 console.log(this._matchedGroupStrings);
                 if (this._matchedGroupStrings.length > 0) {
-                    part += this._matchedGroupStrings[id];
+                    part += this._matchedGroupStrings[_index][id];
                 }
             }
 
