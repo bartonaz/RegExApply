@@ -10,6 +10,7 @@ class RegExApply {
     private _regexp: any;
     private _matchedStrings: Array<string>;
     private _matchedIndices: Array<Array<number>>;
+    private _matchedGroupStrings: Array<Array<string>>;
     private _matchDone: boolean;
     private static _tagDressing: Array<string> = ["@##BRT5K.H1GHLiGHT.PRE##@", "@##BRT5K.H1GHLiGHT.POST##@"];
     /////////////////////////////////////////// Public members
@@ -50,14 +51,27 @@ class RegExApply {
     };
     /**
      * Extract an array of matched strings
-     * @param  {Array<string>} regexp Regular expressions to be used
-     * @return {Array<string>}        Array of matched strings
      */
     get matchedStrings (): Array<string> {
         if (!this._matchDone) {
             this._findMatchedIndices();
         }
         return this._matchedStrings;
+    };
+    /**
+     * Extract an array of arrays of strings matched to groups
+     */
+    get matchedGroupStrings (): Array<Array<string>> {
+        if (!this._matchDone) {
+            this._findMatchedIndices();
+        }
+        return this._matchedGroupStrings;
+    };
+    /**
+     * Set an array of arrays of strings matched to groups
+     */
+    set matchedGroupStrings (_strings: Array<Array<string>>) {
+        this._matchedGroupStrings = _strings;
     };
     /**
      * Extract an array of first-last indices of the matched strings
@@ -95,6 +109,7 @@ class RegExApply {
      * @return {string}             Original text with matched strings being replaced
      */
     textReplaced (_replaceStr: string): string {
+        console.log("textReplaced: "+_replaceStr);
         var text = "",
             lastCharIndex = 0;
         // Looping through the matched fragments
@@ -103,7 +118,7 @@ class RegExApply {
             // Adding the original part of the text before the match
             text += this._text.slice(lastCharIndex, indices[0]);
             // Adding the replacement string, treating special acnhor symbols
-            var replacement = RegExApply.anchoredStringExpanded(_replaceStr, this.matchedStrings, iF);
+            var replacement = this.anchoredStringExpanded(_replaceStr, iF);
             text += replacement;
             lastCharIndex = indices[1]+1;
         }
@@ -128,6 +143,8 @@ class RegExApply {
         // Running the regexp on the text
         var re = this._regexp,
             indicesMatched = [],
+            stringsMatched = [],
+            stringsGroupMatched = [],
             result_;
         // Looping over separate regions of original text
         for (var iR=0, nR=this._textSearchIndices.length; iR<nR; ++iR) {
@@ -145,13 +162,27 @@ class RegExApply {
                     continue;
                 }
                 indicesMatched.push([ indexOffset + iFirst, indexOffset + iFirst + len-1 ]);
+                stringsMatched.push(result_[0]);
+                // Adding strings matched to groups
+                if (result_.length > 1) {
+                    var groupStrings = [];
+                    for (var iG=1, nG=result_.length; iG<nG; ++iG) {
+                        groupStrings.push(result_[iG]);
+                    }
+                    stringsGroupMatched.push(groupStrings);
+                }
+                console.log("Group str:");
+                console.log(stringsGroupMatched);
                 if (!this._regexpIsGlobal) break;
             }
         }
         
         this._matchedIndices = indicesMatched;
-        this._findMatchedStrings();
+        this._matchedStrings = stringsMatched;
+        this._matchedGroupStrings = stringsGroupMatched;
         this._matchDone = true;
+        console.log("Group strings");
+        console.log(this._matchedGroupStrings);
     };
     /**
      * Extracts substrings based on the found indices
@@ -171,6 +202,7 @@ class RegExApply {
      */
     _resetOutput (): void {
         this._matchedStrings = [];
+        this._matchedGroupStrings = [];
         this._matchedIndices = [];
         this._matchDone = false;
         this.messages = [];
@@ -215,27 +247,26 @@ class RegExApply {
     };
     /**
      * Join matched strings into a new string with a separation string in between
-     * @param  {Array<string>} _strings   Strings to match
      * @param  {string}        _separator Separator inserted between strings
      * @param  {string}        _prefix    Inserted before each string
      * @param  {string}        _postfix   Inserted after each string
      * @return {string}                   Complete joined string
      */
-    static matchedStringsJoined (_strings: Array<string>, _fragment: string, _separator?: string): string {
-        if (_strings.length < 1) return "";
-        var fragment = _fragment === undefined ? "" : this.replacedSpecialChars(_fragment),
-            separator = _separator === undefined ? "" : this.replacedSpecialChars(_separator),
+    matchedStringsJoined (_fragment: string, _separator?: string): string {
+        if (this._matchedStrings.length < 1) return "";
+        var fragment = _fragment === undefined ? "" : RegExApply.replacedSpecialChars(_fragment),
+            separator = _separator === undefined ? "" : RegExApply.replacedSpecialChars(_separator),
             string_joined = "";
         // Looping over matched strings and expanding fragments joined with separators
-        for (var iF=0, nF=_strings.length; iF<nF; ++iF) {
-            var fragment_expanded = RegExApply.anchoredStringExpanded(fragment, _strings, iF),
-                separator_expanded = RegExApply.anchoredStringExpanded(separator, _strings, iF);
+        for (var iF=0, nF=this._matchedStrings.length; iF<nF; ++iF) {
+            var fragment_expanded = this.anchoredStringExpanded(fragment, iF),
+                separator_expanded = this.anchoredStringExpanded(separator, iF);
             string_joined += fragment_expanded;
             if (iF == nF-1) continue;
             string_joined += separator_expanded;
         }
             // joinStr = postfix+separator+prefix;
-            // var joinedStr = _strings.join(joinStr);
+            // var joinedStr = this._matchedStrings.join(joinStr);
             // joinedStr = prefix+joinedStr+postfix;
 
         return string_joined;
@@ -243,29 +274,28 @@ class RegExApply {
     /**
      * Expands the string with anchors into a literal string
      * @param  {string}        _anchorString   String with anchor symbols to be expanded
-     * @param  {Array<string>} _matchedStrings Strings matched by a regexp that are referenced by anchors
      * @return {string}                        Expanded literal string
      */
-    static anchoredStringExpanded(_anchorString: string, _matchedStrings: Array<string>, _index: number): string {
+    anchoredStringExpanded(_anchorString: string, _index: number): string {
         var str = "",
             anchorString = RegExApply.dressUnescapeSlash(_anchorString),
-            _indexLast = _matchedStrings.length-1,
+            _indexLast = this._matchedStrings.length-1,
             // anchorString = _anchorString,
             result_ = undefined,
             lastIndex = 0,
-            re = /\\[-]?(#\d*|\d+|[I&N][+-]\d+|[I&N]) ?/g;
+            re = /\\[-]?(\d+|#\d*|\d+|[I&N][+-]\d+|[I&N]) ?/g;
         // Looping through the elements of the anchor string
         while (result_ = re.exec(anchorString)) {
             var len: number = result_[0].length,
                 iFirst: number = result_.index,
-                nEl = _matchedStrings.length;
+                nEl = this._matchedStrings.length;
             // Adding the preceding raw unmatched text fragment
             str += anchorString.slice(lastIndex, iFirst);
             // Interpreting the matched fragment
             var partRaw = anchorString.slice(iFirst+1, iFirst + len),
                 partRes = undefined,
                 part = "";
-            
+            console.log("partRaw: "+partRaw);
             // If the matched fragment is an index
             if (partRes = partRaw.match(/([-])?I([+-])?(\d+)?/)) {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, false);
@@ -276,18 +306,28 @@ class RegExApply {
             // If the matched fragment is an element with index offset
             else if (partRes = partRaw.match(/([-])?&([+-])?(\d+)?/)) {
                 var id = RegExApply.anchoredIdFromResult(partRes, _index, _indexLast, true);
-                part += _matchedStrings[id];
+                part += this._matchedStrings[id];
             }
             // If the matched fragment is an element with number of matches
             else if (partRes = partRaw.match(/([-])?N([+-])?(\d+)?/)) {
-                var id = RegExApply.anchoredIdFromResult(partRes, _matchedStrings.length, 0, false);
+                var id = RegExApply.anchoredIdFromResult(partRes, this._matchedStrings.length, 0, false);
                 part += id;
             }
-            // If the matched fragment is an element at a fixed index
+            // If the matched fragment is a group at a fixed index
             else if (partRes = partRaw.match(/([-])?#(\d+)/)) {
                 var id = partRes[2] -1;
                 if (partRes[1] !== undefined) id = _indexLast - id;
-                part += _matchedStrings[id];
+                part += this._matchedStrings[id];
+            }
+            // If the matched fragment is an element at a fixed index
+            else if (partRes = partRaw.match(/([-])?(\d+)/)) {
+                var id = partRes[2] -1;
+                if (partRes[1] !== undefined) id = this._matchedGroupStrings.length - 1 - id;
+                console.log("Grouped strings:");
+                console.log(this._matchedGroupStrings);
+                if (this._matchedGroupStrings.length > 0) {
+                    part += this._matchedGroupStrings[id];
+                }
             }
 
             // var part = partRaw;
